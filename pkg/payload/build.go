@@ -61,7 +61,7 @@ func WithClientId(clientId string) PayloadOption {
 func WithOpenebsEvent(event *event.OpenebsEvent) PayloadOption {
 	return func(p *Payload) error {
 		p.Events = append(p.Events, ApiEvent{
-			Name:   NormalizedEventName(event.CategoryStr()),
+			Name:   NormalizedEventName(event.EngineNameStr() + "-" + event.CategoryStr()),
 			Params: *event,
 		})
 		return nil
