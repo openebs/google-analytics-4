@@ -39,20 +39,23 @@ const (
 func PingCheck(engineName, category string, pingImmediately bool) {
 	// Create a new usage field
 	u := New()
-	pingSender := u.CommonBuild(engineName).
-		InstallBuilder(true).
-		SetCategory(category)
 
 	if pingImmediately {
 		// Ping immediately.
-		pingSender.Send()
+		u.CommonBuild(engineName).
+			InstallBuilder(true).
+			SetCategory(category).
+			Send()
 	}
 
 	duration := getPingPeriod()
 	ticker := time.NewTicker(duration)
 	for range ticker.C {
 		// Ping periodically, starting at 'duration'.
-		pingSender.Send()
+		u.CommonBuild(engineName).
+			InstallBuilder(true).
+			SetCategory(category).
+			Send()
 	}
 }
 
