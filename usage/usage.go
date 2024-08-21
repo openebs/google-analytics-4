@@ -1,30 +1,55 @@
-/*
-Copyright 2023 The OpenEBS Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package usage
 
 import (
+	"encoding/base64"
+	"os"
 	"strconv"
 
+	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 	"k8s.io/klog/v2"
 
 	ga4Client "github.com/openebs/google-analytics-4/pkg/client"
 	ga4Event "github.com/openebs/google-analytics-4/pkg/event"
-	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
 )
+
+// apiCreds reads envs and decodes base64 input for GA-4 MeasurementId and ApiSecret.
+// Returns defaults if envs are unset/invalid.
+func apiCreds() (id, secret string) {
+	// Return defaults if checks fail.
+	id = DefaultMeasurementId
+	secret = DefaultApiSecret
+
+	// Use defaults if envs are unset or they are set and values are empty.
+	encodedId, idExists := os.LookupEnv(MeasurementIdEnv)
+	if !idExists || (len(encodedId) == 0) {
+		return
+	}
+	encodedSecret, secretExists := os.LookupEnv(ApiSecretEnv)
+	if !secretExists || (len(encodedSecret) == 0) {
+		return
+	}
+	// Use defaults if the envs are not valid base64 strings.
+	idBuf, err := base64.StdEncoding.DecodeString(encodedId)
+	if err != nil {
+		klog.Errorf("Failed to decode measurement id: %s", err.Error())
+		return
+	}
+	secretBuf, err := base64.StdEncoding.DecodeString(encodedSecret)
+	if err != nil {
+		klog.Errorf("Failed to decode secret: %s", err.Error())
+		return
+	}
+	// Use defaults if the input measurement ID doesn't match the regex.
+	if !ga4Client.MeasurementIDMatcher.Match(idBuf) {
+		klog.Errorf("Measurement ID does not match regex")
+		return
+	}
+
+	// Return input values
+	id = string(idBuf)
+	secret = string(secretBuf)
+	return
+}
 
 // Usage struct represents all information about a usage metric sent to
 // Google Analytics with respect to the application
@@ -38,9 +63,11 @@ type Usage struct {
 
 // New returns an instance of Usage
 func New() *Usage {
+	measurementId, apiSecret := apiCreds()
+
 	client, err := ga4Client.NewMeasurementClient(
-		ga4Client.WithApiSecret(ApiSecret),
-		ga4Client.WithMeasurementId(MeasurementId),
+		ga4Client.WithApiSecret(apiSecret),
+		ga4Client.WithMeasurementId(measurementId),
 	)
 	if err != nil {
 		return nil

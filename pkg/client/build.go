@@ -25,7 +25,7 @@ import (
 	"github.com/openebs/lib-csi/pkg/common/errors"
 )
 
-var measurementIDMatcher = regexp.MustCompile(`^G-[a-zA-Z0-9]+$`)
+var MeasurementIDMatcher = regexp.MustCompile(`^G-[a-zA-Z0-9]+$`)
 
 type MeasurementClientOption func(*MeasurementClient) error
 
@@ -82,7 +82,7 @@ func WithMeasurementId(measurementId string) MeasurementClientOption {
 			return errors.Errorf("failed to set measurement_id: id is an empty string")
 		}
 
-		if !measurementIDMatcher.MatchString(measurementId) {
+		if !MeasurementIDMatcher.MatchString(measurementId) {
 			return errors.Errorf("Invalid measurement_id: %s", measurementId)
 		}
 

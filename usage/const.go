@@ -1,10 +1,10 @@
 package usage
 
 const (
-	// MeasurementId is the unique code of the OpenEBS property in Google Analytics.
-	MeasurementId string = "G-TZGP46618W"
-	// ApiSecret is the measurement protocol api_secret.
-	ApiSecret string = "91JGdTg9QwGn7Y-vvuM4zA"
+	// DefaultMeasurementId is the default unique code of the OpenEBS property in Google Analytics.
+	DefaultMeasurementId string = "G-TZGP46618W"
+	// DefaultApiSecret is the default measurement protocol api_secret.
+	DefaultApiSecret string = "91JGdTg9QwGn7Y-vvuM4zA"
 
 	// InstallEvent event is sent on pod starts
 	InstallEvent string = "install"
@@ -26,4 +26,9 @@ const (
 	EventLabelNode string = "nodes"
 	// EventLabelCapacity holds the string label "capacity"
 	EventLabelCapacity string = "capacity"
+
+	// MeasurementIdEnv sets the measurement ID for the target GA4 property.
+	MeasurementIdEnv = "GA_ID"
+	// ApiSecretEnv sets the measurement protocol API secret for the target GA4 property.
+	ApiSecretEnv = "GA_KEY"
 )
