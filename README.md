@@ -1,4 +1,10 @@
 ## Google Analytics 4
+[![CI](https://github.com/openebs/google-analytics-4/actions/workflows/pull_request.yml/badge.svg)](https://github.com/openebs/google-analytics-4/actions/workflows/pull_request.yml)
+[![Slack](https://img.shields.io/badge/chat-slack-ff1493.svg?style=flat-square)](https://kubernetes.slack.com/messages/openebs)
+[![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://us05web.zoom.us/j/87535654586?pwd=CigbXigJPn38USc6Vuzt7qSVFoO79X.1)
+[![Go Report](https://goreportcard.com/badge/github.com/openebs/google-analytics-4)](https://goreportcard.com/report/github.com/openebs/google-anaytics-4)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fopenebs%2Fgoogle-analytics-4.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fopenebs%2Fgoogle-analytics-4?ref=badge_shield&issueType=license)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9660/badge)](https://www.bestpractices.dev/projects/9660)
 
 Track and monitor your Go programs for free with Google Analytics
 
@@ -78,3 +84,6 @@ Create a new `client` and `Send()` an 'event'.
 5. Watch as your event appears
 
 	![foo-ga](https://cloud.githubusercontent.com/assets/633843/5979585/023fc580-a8fd-11e4-803a-956610bcc2e2.png)
+
+## License Compliance
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fopenebs%2Fgoogle-analytics-4.svg?type=large&issueType=license)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fopenebs%2Fgoogle-analytics-4?ref=badge_large&issueType=license)
