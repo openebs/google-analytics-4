@@ -27,7 +27,7 @@ on:
       - 'docs/**'
       - 'design/**'
       - 'LICENSE'
-      - 'MAINTAINERS'
+      - 'MAINTAINERS.md'
 
 jobs:
   unit-test:
