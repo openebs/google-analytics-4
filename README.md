@@ -1,7 +1,7 @@
 ## Google Analytics 4
 [![CI](https://github.com/openebs/google-analytics-4/actions/workflows/pull_request.yml/badge.svg)](https://github.com/openebs/google-analytics-4/actions/workflows/pull_request.yml)
 [![Slack](https://img.shields.io/badge/chat-slack-ff1493.svg?style=flat-square)](https://kubernetes.slack.com/messages/openebs)
-[![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://us05web.zoom.us/j/87535654586?pwd=CigbXigJPn38USc6Vuzt7qSVFoO79X.1)
+[![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://github.com/openebs/community/blob/HEAD/README.md#community)
 [![Go Report](https://goreportcard.com/badge/github.com/openebs/google-analytics-4)](https://goreportcard.com/report/github.com/openebs/google-anaytics-4)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fopenebs%2Fgoogle-analytics-4.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fopenebs%2Fgoogle-analytics-4?ref=badge_shield&issueType=license)
 
