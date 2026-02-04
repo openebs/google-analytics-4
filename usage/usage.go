@@ -167,7 +167,7 @@ func (u *Usage) Send() {
 		event := u.OpenebsEventBuilder.Build()
 
 		if err := client.Send(event); err != nil {
-			klog.Errorf(err.Error())
+			klog.Errorf("failed to send event: %v", err)
 			return
 		}
 	}()
