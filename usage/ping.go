@@ -1,22 +1,7 @@
-/*
-Copyright 2023 The OpenEBS Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package usage
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -35,8 +20,15 @@ const (
 	minimumPingPeriod time.Duration = 1 * time.Hour
 )
 
-// PingCheck sends ping events to Google Analytics
+// PingCheck sends ping events to Google Analytics on a fixed cadence.
 func PingCheck(engineName, category string, pingImmediately bool) {
+	PingCheckCtx(context.Background(), engineName, category, pingImmediately)
+}
+
+// PingCheckCtx sends ping events to Google Analytics on a fixed cadence,
+// returning when ctx is cancelled. If pingImmediately is true, one event is
+// sent before the ticker starts; subsequent events fire every getPingPeriod().
+func PingCheckCtx(ctx context.Context, engineName, category string, pingImmediately bool) {
 	// Create a new usage field
 	u := New()
 
@@ -48,14 +40,20 @@ func PingCheck(engineName, category string, pingImmediately bool) {
 			Send()
 	}
 
-	duration := getPingPeriod()
-	ticker := time.NewTicker(duration)
-	for range ticker.C {
-		// Ping periodically, starting at 'duration'.
-		u.CommonBuild(engineName).
-			InstallBuilder(true).
-			SetCategory(category).
-			Send()
+	ticker := time.NewTicker(getPingPeriod())
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			// Ping periodically.
+			u.CommonBuild(engineName).
+				InstallBuilder(true).
+				SetCategory(category).
+				Send()
+		}
 	}
 }
 
