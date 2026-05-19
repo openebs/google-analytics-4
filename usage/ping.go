@@ -27,7 +27,7 @@ func PingCheck(engineName, category string, pingImmediately bool) {
 
 // PingCheckCtx sends ping events to Google Analytics on a fixed cadence,
 // returning when ctx is cancelled. If pingImmediately is true, one event is
-// sent before the ticker starts; subsequent events fire every getPingPeriod().
+// sent before the ticker starts; subsequent events fire every GetPingPeriod().
 func PingCheckCtx(ctx context.Context, engineName, category string, pingImmediately bool) {
 	// Create a new usage field
 	u := New()
@@ -40,7 +40,7 @@ func PingCheckCtx(ctx context.Context, engineName, category string, pingImmediat
 			Send()
 	}
 
-	ticker := time.NewTicker(getPingPeriod())
+	ticker := time.NewTicker(GetPingPeriod())
 	defer ticker.Stop()
 
 	for {
@@ -57,8 +57,8 @@ func PingCheckCtx(ctx context.Context, engineName, category string, pingImmediat
 	}
 }
 
-// getPingPeriod sets the duration of health events, defaults to 24
-func getPingPeriod() time.Duration {
+// GetPingPeriod sets the duration of health events, defaults to 24
+func GetPingPeriod() time.Duration {
 	value := env.GetOrDefault(OpenEBSPingPeriod, fmt.Sprint(defaultPingPeriod))
 	duration, _ := time.ParseDuration(value)
 	// Sanity checks for setting time duration of health events

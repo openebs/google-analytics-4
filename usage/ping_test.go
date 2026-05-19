@@ -49,7 +49,7 @@ func TestGetPingPeriod(t *testing.T) {
 	}
 	for testKey, testData := range testSuite {
 		beforeFunc(testData.OpenEBSPingPeriodValue)
-		evaluatedValue := getPingPeriod()
+		evaluatedValue := GetPingPeriod()
 		if evaluatedValue != testData.ExpectedPeriodValue {
 			t.Fatalf("Tests failed for %s, expected=%d, got=%d", testKey, testData.ExpectedPeriodValue, evaluatedValue)
 		}
