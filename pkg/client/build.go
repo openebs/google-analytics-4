@@ -17,8 +17,6 @@ limitations under the License.
 package client
 
 import (
-	"context"
-	"net"
 	"net/http"
 	"regexp"
 
@@ -37,27 +35,11 @@ type MeasurementClient struct {
 }
 
 func NewMeasurementClient(opts ...MeasurementClientOption) (*MeasurementClient, error) {
-	dialer := &net.Dialer{
-		Resolver: &net.Resolver{
-			PreferGo: true,
-			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-				dialer := net.Dialer{}
-				return dialer.DialContext(ctx, network, "8.8.8.8:53")
-			},
-		},
-	}
-	c := &MeasurementClient{
-		HttpClient: &http.Client{
-			Transport: &http.Transport{
-				DialContext: dialer.DialContext,
-			},
-		},
-	}
 
-	var err error
+	c := &MeasurementClient{HttpClient: &http.Client{}}
+
 	for _, opt := range opts {
-		err = opt(c)
-		if err != nil {
+		if err := opt(c); err != nil {
 			return nil, errors.Wrap(err, "failed to build MeasurementClient")
 		}
 	}
@@ -72,6 +54,16 @@ func WithApiSecret(secret string) MeasurementClientOption {
 		}
 
 		s.apiSecret = secret
+		return nil
+	}
+}
+
+func WithHttpClient(client *http.Client) MeasurementClientOption {
+	return func(s *MeasurementClient) error {
+		if client == nil {
+			return errors.Errorf("failed to set http client: client is nil")
+		}
+		s.HttpClient = client
 		return nil
 	}
 }

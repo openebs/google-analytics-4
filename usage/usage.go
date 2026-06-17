@@ -65,10 +65,19 @@ type Usage struct {
 func New() *Usage {
 	measurementId, apiSecret := apiCreds()
 
-	client, err := ga4Client.NewMeasurementClient(
+	httpClient, err := newHTTPClient()
+	if err != nil {
+		klog.Errorf("failed to create http client: %v", err)
+		return nil
+	}
+
+	opts := []ga4Client.MeasurementClientOption{
 		ga4Client.WithApiSecret(apiSecret),
 		ga4Client.WithMeasurementId(measurementId),
-	)
+		ga4Client.WithHttpClient(httpClient),
+	}
+
+	client, err := ga4Client.NewMeasurementClient(opts...)
 	if err != nil {
 		return nil
 	}
