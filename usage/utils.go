@@ -37,6 +37,8 @@ func newHTTPClient() (*http.Client, error) {
 		return nil, fmt.Errorf("invalid %s address %q: must be host:port", DnsEnv, dns)
 	}
 	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
 		Resolver: &net.Resolver{
 			PreferGo: true,
 			Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {

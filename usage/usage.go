@@ -79,6 +79,7 @@ func New() *Usage {
 
 	client, err := ga4Client.NewMeasurementClient(opts...)
 	if err != nil {
+		klog.Errorf("failed to create measurement client: %v", err)
 		return nil
 	}
 	openebsEventBuilder := ga4Event.NewOpenebsEventBuilder()
