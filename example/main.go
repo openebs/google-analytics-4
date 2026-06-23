@@ -15,18 +15,15 @@ import (
 func buildHTTPClient() (*http.Client, error) {
 	dns := os.Getenv("GA_DNS")
 	if dns == "" {
-		dialer := &net.Dialer{}
-		return &http.Client{
-			Transport: &http.Transport{
-				Proxy:       http.ProxyFromEnvironment,
-				DialContext: dialer.DialContext,
-			},
-		}, nil
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		return &http.Client{Transport: tr}, nil
 	}
 	if _, _, err := net.SplitHostPort(dns); err != nil {
 		return nil, fmt.Errorf("invalid GA_DNS address %q: must be host:port", dns)
 	}
 	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
 		Resolver: &net.Resolver{
 			PreferGo: true,
 			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
@@ -35,12 +32,9 @@ func buildHTTPClient() (*http.Client, error) {
 			},
 		},
 	}
-	return &http.Client{
-		Transport: &http.Transport{
-			Proxy:       http.ProxyFromEnvironment,
-			DialContext: dialer.DialContext,
-		},
-	}, nil
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.DialContext = dialer.DialContext
+	return &http.Client{Transport: tr}, nil
 }
 
 func main() {
