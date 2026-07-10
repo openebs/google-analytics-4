@@ -1,21 +1,57 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net"
 	"net/http"
+	"time"
 
 	gaClient "github.com/openebs/google-analytics-4/pkg/client"
 	gaEvent "github.com/openebs/google-analytics-4/pkg/event"
 )
 
+func httpClientWithDns(dns string) (*http.Client, error) {
+	if _, _, err := net.SplitHostPort(dns); err != nil {
+		return nil, fmt.Errorf("invalid dns address %q: must be host:port", dns)
+	}
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		Resolver: &net.Resolver{
+			PreferGo: true,
+			Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {
+				d := net.Dialer{Timeout: 5 * time.Second}
+				return d.DialContext(ctx, network, dns)
+			},
+		},
+	}
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.DialContext = dialer.DialContext
+	return &http.Client{Transport: tr}, nil
+}
+
 func main() {
 
-	client, err := gaClient.NewMeasurementClient(
-		gaClient.WithApiSecret("mAzLji6KR6KQrcmSDmvG-A"),
-		gaClient.WithMeasurementId("G-28XRMGQR7N"),
+	opts := []gaClient.MeasurementClientOption{
+		gaClient.WithApiSecret("<api-secret>"),
+		gaClient.WithMeasurementId("<measurement-id>"),
 		gaClient.WithClientId("1b803d56-fde0-4f1e-ab64-ccb22509ae9f"),
-		gaClient.WithHttpClient(&http.Client{}),
-	)
+	}
+
+	// Only configure a custom HTTP client (with a DNS override) when a DNS
+	// address is set. When it's empty, skip the option so the measurement
+	// client falls back to its default HTTP transport.
+	dns := "<dns>"
+	if dns != "" {
+		httpClient, err := httpClientWithDns(dns)
+		if err != nil {
+			panic(err)
+		}
+		opts = append(opts, gaClient.WithHttpClient(httpClient))
+	}
+
+	client, err := gaClient.NewMeasurementClient(opts...)
 	if err != nil {
 		panic(err)
 	}
