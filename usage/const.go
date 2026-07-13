@@ -5,7 +5,6 @@ const (
 	DefaultMeasurementId string = "G-TZGP46618W"
 	// DefaultApiSecret is the default measurement protocol api_secret.
 	DefaultApiSecret string = "91JGdTg9QwGn7Y-vvuM4zA"
-
 	// InstallEvent event is sent on pod starts
 	InstallEvent string = "install"
 	// VolumeProvision event is sent when a volume is created
@@ -31,4 +30,6 @@ const (
 	MeasurementIdEnv = "GA_ID"
 	// ApiSecretEnv sets the measurement protocol API secret for the target GA4 property.
 	ApiSecretEnv = "GA_KEY"
+	// DnsEnv sets the DNS server address (host:port) used by the GA client resolver (e.g., "8.8.8.8:53").
+	DnsEnv = "GA_DNS"
 )

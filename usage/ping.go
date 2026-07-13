@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/openebs/lib-csi/pkg/common/env"
+	"k8s.io/klog/v2"
 )
 
 // OpenEBSPingPeriod  ping interval of volume io analytics
@@ -31,6 +32,10 @@ func PingCheck(engineName, category string, pingImmediately bool) {
 func PingCheckCtx(ctx context.Context, engineName, category string, pingImmediately bool) {
 	// Create a new usage field
 	u := New()
+	if u == nil {
+		klog.Error("Failed to create Usage instance")
+		return
+	}
 
 	if pingImmediately {
 		// Ping immediately.

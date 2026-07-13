@@ -17,8 +17,34 @@ limitations under the License.
 package usage
 
 import (
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"time"
+
 	"github.com/dustin/go-humanize"
 )
+
+func httpClientWithDns(dns string) (*http.Client, error) {
+	if _, _, err := net.SplitHostPort(dns); err != nil {
+		return nil, fmt.Errorf("invalid %s address %q: must be host:port", DnsEnv, dns)
+	}
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		Resolver: &net.Resolver{
+			PreferGo: true,
+			Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {
+				d := net.Dialer{Timeout: 5 * time.Second}
+				return d.DialContext(ctx, network, dns)
+			},
+		},
+	}
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.DialContext = dialer.DialContext
+	return &http.Client{Transport: tr}, nil
+}
 
 // toHumanSize converts sizes to legible human sizes in IEC units.
 func toHumanSize(size string) (string, error) {

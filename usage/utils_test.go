@@ -1,22 +1,69 @@
-/*
-Copyright 2023 The OpenEBS Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package usage
 
-import "testing"
+import (
+	"context"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+)
+
+func TestHttpClientWithDns_EmptyDNS(t *testing.T) {
+	// An empty DNS address is no longer handled here (the fallback to the
+	// default transport lives in New); it must be rejected as invalid.
+	_, err := httpClientWithDns("")
+	if err == nil {
+		t.Fatal("expected error for empty DNS address, got nil")
+	}
+}
+
+func TestHttpClientWithDns_WithDNS(t *testing.T) {
+	// Start a local UDP listener acting as the fake DNS server.
+	listener, err := net.ListenPacket("udp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to start UDP listener: %v", err)
+	}
+	defer listener.Close()
+
+	client, err := httpClientWithDns(listener.LocalAddr().String())
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	transport, ok := client.Transport.(*http.Transport)
+	if !ok {
+		t.Fatal("expected *http.Transport")
+	}
+
+	// contacted is closed when the fake DNS server receives a packet.
+	contacted := make(chan struct{})
+	go func() {
+		buf := make([]byte, 512)
+		_ = listener.SetReadDeadline(time.Now().Add(2 * time.Second))
+		if _, _, err := listener.ReadFrom(buf); err == nil {
+			close(contacted)
+		}
+	}()
+
+	// Dialing a hostname (not an IP) forces the custom resolver to contact our
+	// fake DNS server. The dial itself will fail — that's expected.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	transport.DialContext(ctx, "tcp", "nonexistent.test:80")
+
+	select {
+	case <-contacted:
+		// custom DNS server was reached — resolver is correctly wired
+	case <-time.After(2 * time.Second):
+		t.Fatal("custom DNS server was never contacted — resolver not wired")
+	}
+}
+
+func TestHttpClientWithDns_InvalidDNS(t *testing.T) {
+	_, err := httpClientWithDns("8.8.8.8")
+	if err == nil {
+		t.Fatal("expected error for DNS address missing port, got nil")
+	}
+}
 
 func TestToHumanSize(t *testing.T) {
 	tests := map[string]struct {

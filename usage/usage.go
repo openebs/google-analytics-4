@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	k8sapi "github.com/openebs/lib-csi/pkg/client/k8s"
+	"github.com/openebs/lib-csi/pkg/common/env"
 	"k8s.io/klog/v2"
 
 	ga4Client "github.com/openebs/google-analytics-4/pkg/client"
@@ -65,11 +66,26 @@ type Usage struct {
 func New() *Usage {
 	measurementId, apiSecret := apiCreds()
 
-	client, err := ga4Client.NewMeasurementClient(
+	opts := []ga4Client.MeasurementClientOption{
 		ga4Client.WithApiSecret(apiSecret),
 		ga4Client.WithMeasurementId(measurementId),
-	)
+	}
+
+	// Only configure a custom HTTP client (with a DNS override) when a DNS
+	// address is set. When it's empty, skip the option so the measurement
+	// client falls back to its default HTTP transport.
+	if dns := env.Get(DnsEnv); dns != "" {
+		httpClient, err := httpClientWithDns(dns)
+		if err != nil {
+			klog.Errorf("failed to create http client: %v", err)
+			return nil
+		}
+		opts = append(opts, ga4Client.WithHttpClient(httpClient))
+	}
+
+	client, err := ga4Client.NewMeasurementClient(opts...)
 	if err != nil {
+		klog.Errorf("failed to create measurement client: %v", err)
 		return nil
 	}
 	openebsEventBuilder := ga4Event.NewOpenebsEventBuilder()
