@@ -24,11 +24,19 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+
+	"github.com/openebs/google-analytics-4/internal/dnsaddr"
 )
 
+// httpClientWithDns returns an HTTP client whose resolver queries the given DNS
+// server instead of the system default. See dnsaddr.Normalize for the accepted
+// address formats.
 func httpClientWithDns(dns string) (*http.Client, error) {
-	if _, _, err := net.SplitHostPort(dns); err != nil {
-		return nil, fmt.Errorf("invalid %s address %q: must be host:port", DnsEnv, dns)
+	addr, err := dnsaddr.Normalize(dns)
+	if err != nil {
+		// Name the env var here so operators know which setting to correct;
+		// dnsaddr stays generic for the example's sake.
+		return nil, fmt.Errorf("%s: %w", DnsEnv, err)
 	}
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second,
@@ -37,7 +45,7 @@ func httpClientWithDns(dns string) (*http.Client, error) {
 			PreferGo: true,
 			Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {
 				d := net.Dialer{Timeout: 5 * time.Second}
-				return d.DialContext(ctx, network, dns)
+				return d.DialContext(ctx, network, addr)
 			},
 		},
 	}

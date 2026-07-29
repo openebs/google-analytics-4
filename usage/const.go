@@ -30,6 +30,8 @@ const (
 	MeasurementIdEnv = "GA_ID"
 	// ApiSecretEnv sets the measurement protocol API secret for the target GA4 property.
 	ApiSecretEnv = "GA_KEY"
-	// DnsEnv sets the DNS server address (host:port) used by the GA client resolver (e.g., "8.8.8.8:53").
+	// DnsEnv sets the DNS server address used by the GA client resolver. The
+	// port is optional and defaults to 53, so both "8.8.8.8" and "8.8.8.8:53"
+	// are accepted (as are bare and bracketed IPv6 addresses).
 	DnsEnv = "GA_DNS"
 )
