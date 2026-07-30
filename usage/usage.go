@@ -62,7 +62,11 @@ type Usage struct {
 	AnalyticsClient *ga4Client.MeasurementClient
 }
 
-// New returns an instance of Usage
+// New returns an instance of Usage. It never returns nil: callers chain
+// directly off it (New().CommonBuild(...).Send()), so a misconfigured
+// environment must degrade telemetry rather than panic the importing process.
+// When the analytics client cannot be built, the returned Usage still accepts
+// every builder call and Send simply drops the event.
 func New() *Usage {
 	measurementId, apiSecret := apiCreds()
 
@@ -73,20 +77,23 @@ func New() *Usage {
 
 	// Only configure a custom HTTP client (with a DNS override) when a DNS
 	// address is set. When it's empty, skip the option so the measurement
-	// client falls back to its default HTTP transport.
+	// client falls back to its default HTTP transport. A malformed address is
+	// treated the same way: telemetry is best-effort, so a misconfigured env
+	// var must not stop the client from being created.
 	if dns := env.Get(DnsEnv); dns != "" {
 		httpClient, err := httpClientWithDns(dns)
 		if err != nil {
-			klog.Errorf("failed to create http client: %v", err)
-			return nil
+			klog.Errorf("failed to create http client, falling back to the default resolver: %v", err)
+		} else {
+			opts = append(opts, ga4Client.WithHttpClient(httpClient))
 		}
-		opts = append(opts, ga4Client.WithHttpClient(httpClient))
 	}
 
+	// A nil AnalyticsClient disables sending; the event builder stays usable so
+	// the caller's chain completes without a nil dereference.
 	client, err := ga4Client.NewMeasurementClient(opts...)
 	if err != nil {
-		klog.Errorf("failed to create measurement client: %v", err)
-		return nil
+		klog.Errorf("failed to create measurement client, telemetry is disabled: %v", err)
 	}
 	openebsEventBuilder := ga4Event.NewOpenebsEventBuilder()
 	return &Usage{AnalyticsClient: client, OpenebsEventBuilder: openebsEventBuilder}
@@ -154,7 +161,9 @@ func (u *Usage) ApplicationBuilder() *Usage {
 	v := NewVersion()
 	_ = v.getVersion(false)
 
-	u.AnalyticsClient.SetClientId(v.id)
+	if u.AnalyticsClient != nil {
+		u.AnalyticsClient.SetClientId(v.id)
+	}
 	u.OpenebsEventBuilder.K8sDefaultNsUid(v.id)
 
 	return u
@@ -166,7 +175,9 @@ func (u *Usage) InstallBuilder(override bool) *Usage {
 	clusterSize, _ := k8sapi.NumberOfNodes()
 	_ = v.getVersion(override)
 
-	u.AnalyticsClient.SetClientId(v.id)
+	if u.AnalyticsClient != nil {
+		u.AnalyticsClient.SetClientId(v.id)
+	}
 	u.OpenebsEventBuilder.
 		K8sDefaultNsUid(v.id).
 		Category(InstallEvent).
@@ -177,9 +188,14 @@ func (u *Usage) InstallBuilder(override bool) *Usage {
 
 // Send POSTS an event over to the GA4 API
 func (u *Usage) Send() {
+	client := u.AnalyticsClient
+	if client == nil {
+		klog.V(4).Info("skipping event: analytics client is not configured")
+		return
+	}
+
 	// Instantiate an analytics client
 	go func() {
-		client := u.AnalyticsClient
 		event := u.OpenebsEventBuilder.Build()
 
 		if err := client.Send(event); err != nil {

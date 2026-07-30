@@ -5,15 +5,22 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/openebs/google-analytics-4/internal/dnsaddr"
 	gaClient "github.com/openebs/google-analytics-4/pkg/client"
 	gaEvent "github.com/openebs/google-analytics-4/pkg/event"
 )
 
+// httpClientWithDns returns an HTTP client whose resolver queries the given DNS
+// server instead of the system default. See dnsaddr.Normalize for the accepted
+// address formats.
 func httpClientWithDns(dns string) (*http.Client, error) {
-	if _, _, err := net.SplitHostPort(dns); err != nil {
-		return nil, fmt.Errorf("invalid dns address %q: must be host:port", dns)
+	addr, err := dnsaddr.Normalize(dns)
+	if err != nil {
+		return nil, err
 	}
 	dialer := &net.Dialer{
 		Timeout:   30 * time.Second,
@@ -22,7 +29,7 @@ func httpClientWithDns(dns string) (*http.Client, error) {
 			PreferGo: true,
 			Dial: func(ctx context.Context, network string, address string) (net.Conn, error) {
 				d := net.Dialer{Timeout: 5 * time.Second}
-				return d.DialContext(ctx, network, dns)
+				return d.DialContext(ctx, network, addr)
 			},
 		},
 	}
@@ -34,15 +41,19 @@ func httpClientWithDns(dns string) (*http.Client, error) {
 func main() {
 
 	opts := []gaClient.MeasurementClientOption{
+		// pkg/client takes these verbatim -- do not base64-encode them. Only the
+		// usage package's GA_KEY/GA_ID env vars are base64-decoded.
 		gaClient.WithApiSecret("<api-secret>"),
 		gaClient.WithMeasurementId("<measurement-id>"),
 		gaClient.WithClientId("1b803d56-fde0-4f1e-ab64-ccb22509ae9f"),
 	}
 
 	// Only configure a custom HTTP client (with a DNS override) when a DNS
-	// address is set. When it's empty, skip the option so the measurement
-	// client falls back to its default HTTP transport.
-	dns := "<dns>"
+	// address is set. When it's empty -- the default when GA_DNS is unset --
+	// skip the option so the measurement client falls back to its default HTTP
+	// transport. Export GA_DNS=8.8.8.8 (the port is optional) to resolve
+	// through a specific server instead.
+	dns := strings.TrimSpace(os.Getenv("GA_DNS"))
 	if dns != "" {
 		httpClient, err := httpClientWithDns(dns)
 		if err != nil {
